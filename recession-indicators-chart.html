@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Oil, unemployment, and the Dow, 1970–2026</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #161922;
+    --ink: #e8eaf0;
+    --muted: #8a91a3;
+    --line: #2a2f3d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    padding: 32px;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  h1 {
+    font-size: 24px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin: 0 0 4px;
+  }
+  .sub {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .chart-wrap { position: relative; height: 600px; }
+  .footnote {
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+  .legend-events {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    margin-top: 14px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .legend-events span b { color: var(--ink); font-weight: 500; }
+  .legend-events .swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Oil, unemployment, and the Dow, 1970–2026</h1>
+  <div class="sub">
+    Three indicators on three axes. Grey shaded bands are NBER-dated US recessions. The 1973 oil shock is the cleanest
+    case of all three signals firing together: oil up sharply, unemployment up, Dow down hard.
+  </div>
+
+  <div class="panel">
+    <div class="chart-wrap"><canvas id="chart"></canvas></div>
+
+    <div class="legend-events">
+      <span><span class="swatch" style="background:rgba(120,120,140,0.18)"></span><b>Grey bands</b> NBER recessions</span>
+      <span><b>1973</b> OPEC embargo</span>
+      <span><b>1979</b> Iranian Revolution</span>
+      <span><b>1987</b> Black Monday</span>
+      <span><b>1990</b> Gulf War</span>
+      <span><b>2008</b> GFC</span>
+      <span><b>2020</b> COVID</span>
+      <span><b>2026</b> Iran war</span>
+    </div>
+
+    <div class="footnote">
+      <b>Reading the chart.</b> All three series are useful but tell different parts of the story. Oil price spikes lead
+      recessions in the 1970s, 1990, 2008, and arguably now. Unemployment lags: it rises after the recession has begun
+      and stays elevated past the trough. The Dow leads in the other direction: it usually starts falling before the
+      official recession date and starts recovering before the trough.
+      <br><br>
+      <b>Axes.</b> Left: US unemployment rate (%, BLS U-3). Right (inner): WTI/Saudi posted crude price (USD/bbl, nominal).
+      Right (outer): Dow Jones Industrial Average year-end close (log scale because the absolute level grew ~50x from 1970).
+      <br><br>
+      <b>Sources.</b> Unemployment from BLS. Oil from BP Statistical Review (1970–85) and EIA WTI (1986+). Dow from S&P Dow Jones year-end closes. NBER business cycle dating committee recession bands. April 2026 figures are partial-year approximations.
+    </div>
+  </div>
+
+  <!-- Drawdown reference panel -->
+  <div class="panel">
+    <h2 style="font-size:18px;font-weight:500;margin:0 0 4px;color:var(--ink);">Drawdown scenarios for 2026</h2>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:18px;">
+      What each historical bear-market template implies if applied to current index levels. The Dow stood at 50,121 on
+      11 February 2026 (all-time high) and 49,230 on 24 April 2026. The All Ordinaries stood at ~8,745.
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+      <div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:500;">US Dow Jones Industrial Average</div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--line);text-align:left;">
+              <th style="padding:6px 8px;color:var(--muted);font-weight:500;">Template</th>
+              <th style="padding:6px 8px;color:var(--muted);font-weight:500;">Drop</th>
+              <th style="padding:6px 8px;color:var(--muted);font-weight:500;text-align:right;">From peak</th>
+              <th style="padding:6px 8px;color:var(--muted);font-weight:500;text-align:right;">From current</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="padding:6px 8px;">2020 COVID</td><td style="padding:6px 8px;color:var(--muted);">-37%</td><td style="padding:6px 8px;text-align:right;">31,576</td><td style="padding:6px 8px;text-align:right;">31,015</td></tr>
+            <tr><td style="padding:6px 8px;">2000–02 dot-com</td><td style="padding:6px 8px;color:var(--muted);">-38%</td><td style="padding:6px 8px;text-align:right;">31,075</td><td style="padding:6px 8px;text-align:right;">30,523</td></tr>
+            <tr><td style="padding:6px 8px;">1973–74 nominal</td><td style="padding:6px 8px;color:var(--muted);">-45%</td><td style="padding:6px 8px;text-align:right;">27,567</td><td style="padding:6px 8px;text-align:right;">27,077</td></tr>
+            <tr><td style="padding:6px 8px;">2007–09 GFC</td><td style="padding:6px 8px;color:var(--muted);">-54%</td><td style="padding:6px 8px;text-align:right;">23,156</td><td style="padding:6px 8px;text-align:right;">22,646</td></tr>
+            <tr><td style="padding:6px 8px;">1973–74 real terms</td><td style="padding:6px 8px;color:var(--muted);">-55%</td><td style="padding:6px 8px;text-align:right;">22,554</td><td style="padding:6px 8px;text-align:right;">22,154</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:500;">All Ordinaries</div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--line);text-align:left;">
+              <th style="padding:6px 8px;color:var(--muted);font-weight:500;">Template</th>
+              <th style="padding:6px 8px;color:var(--muted);font-weight:500;">Drop</th>
+              <th style="padding:6px 8px;color:var(--muted);font-weight:500;text-align:right;">From current</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="padding:6px 8px;">2020 COVID</td><td style="padding:6px 8px;color:var(--muted);">-36%</td><td style="padding:6px 8px;text-align:right;">5,597</td></tr>
+            <tr><td style="padding:6px 8px;">1973–74 nominal</td><td style="padding:6px 8px;color:var(--muted);">-59%</td><td style="padding:6px 8px;text-align:right;">3,585</td></tr>
+            <tr><td style="padding:6px 8px;">2007–09 GFC</td><td style="padding:6px 8px;color:var(--muted);">-54%</td><td style="padding:6px 8px;text-align:right;">4,023</td></tr>
+            <tr><td style="padding:6px 8px;">1987 Black Monday (AU)</td><td style="padding:6px 8px;color:var(--muted);">-50%</td><td style="padding:6px 8px;text-align:right;">4,373</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="footnote" style="margin-top:18px;">
+      <b>Reading the table.</b> A 1973-style nominal repeat puts the Dow in the 27,000s and the All Ords in the 3,500s.
+      A 2008 repeat puts them in the 22,000s and 4,000s respectively. Australian markets historically draw down harder
+      than US markets in shared crises (1973–74 was -59% for the AU equivalent vs -45% for the Dow; 1987 was -50% for
+      the All Ords vs -36% for the Dow), partly because Australian equity is concentrated in cyclical sectors
+      (resources, banks) that suffer disproportionately in global recessions.
+      <br><br>
+      <b>Real-terms caveat.</b> The 1973–74 row marked "real terms" applies the inflation-adjusted loss to a nominal
+      level. If 2026 inflation runs at 8% or higher, the nominal floor would not need to fall to GFC levels for the
+      portfolio damage to match the 1970s; persistent inflation would erode any nominal recovery for years. The Dow
+      did not regain its 1973 nominal peak until 1982, and in real terms not until 1992.
+    </div>
+  </div>
+
+  <!-- Australian chart -->
+  <h1 style="margin-top:18px;">Australia: oil, unemployment, RBA rate, and All Ords, 1970–2026</h1>
+  <div class="sub">
+    Same structure as the US chart but with Australian indicators. Grey shaded bands are Australian recessions
+    (ABS-recognised contractions). Note that Australia avoided recession 1991–2020, the longest run of any developed
+    economy. The 1990–91 "recession we had to have" was harsher than anything the US experienced in the same window.
+  </div>
+
+  <div class="panel">
+    <div class="chart-wrap"><canvas id="chartAU"></canvas></div>
+
+    <div class="legend-events">
+      <span><span class="swatch" style="background:rgba(120,120,140,0.18)"></span><b>Grey bands</b> AU recessions</span>
+      <span><b>1974</b> Oil shock</span>
+      <span><b>Dec 1983</b> AUD float</span>
+      <span><b>1989–90</b> RBA rate peak 17.5%</span>
+      <span><b>1990–91</b> Keating recession</span>
+      <span><b>2008</b> GFC (Australia avoided technical recession)</span>
+      <span><b>2020</b> COVID</span>
+      <span><b>2026</b> Iran war</span>
+    </div>
+
+    <div class="footnote">
+      <b>Reading the chart.</b> The Australian story differs from the US in several ways. Inflation in 1974 was even
+      worse here than in the US (peak 17.6% in 1975). The 1990–91 recession was deeper and longer than the 1990 US
+      recession; unemployment peaked at 10.9% in 1992. Australia famously dodged recession in 2008–09 thanks to a
+      China-driven mining boom and aggressive RBA rate cuts. The post-2010 cash rate path collapsed to 0.1% during
+      COVID and has now returned to 4.10%. Oil in AUD has historically tracked USD oil but with significant
+      divergence during AUD weakness phases.
+      <br><br>
+      <b>Axes.</b> Left: Australian unemployment rate (%, ABS) and RBA cash rate / short-term policy rate (%).
+      Right (inner): WTI/Saudi posted crude price converted to AUD using annual average AUD/USD. Right (outer):
+      All Ordinaries year-end close (log scale; Sydney All Ords pre-1980, current All Ords 1980+, methodologies differ).
+      <br><br>
+      <b>Sources.</b> Unemployment from ABS Labour Force survey. Cash rate from RBA (formal target since Jan 1990;
+      pre-1990 series uses the official short-term money-market rate as proxy and should be interpreted as
+      directional rather than precisely comparable). Oil converted from USD using RBA AUD/USD annual averages.
+      All Ords from ASX/S&P Dow Jones year-end closes. April 2026 figures are partial-year.
+    </div>
+  </div>
+
+  <!-- SPECULATIVE PROJECTION 2026-2030 -->
+  <h1 style="margin-top:18px;color:#ff8a8a;">⚠ SPECULATIVE: Australia 2015–2030 with central projection for a 1973-grade recession scenario</h1>
+  <div class="sub" style="border-left:3px solid #ff8a8a;padding-left:12px;background:rgba(255,138,138,0.04);padding:12px;border-radius:6px;">
+    <b style="color:#ff8a8a;">This chart contains speculation, not forecast.</b> The 2026 Q3 onwards values are central-scenario projections
+    derived from a structured channel-analysis exercise: what would happen if the Iran war oil shock translates into a 1973-grade
+    global recession reaching Australia. Solid lines are observed data; dashed lines are projection.
+    The red tinted band indicates the projected Australian recession window (Q3 2026 to Q1 2028).
+    <br><br>
+    <b>This is one scenario, not the only scenario.</b> An optimistic case (oil shock resolves, no global recession) keeps
+    the lines flat or slowly normalising; a pessimistic case (oil shock combined with banking-system stress) is materially
+    worse than what is plotted. The point of the chart is to make the channel analysis visually concrete, not to predict.
+  </div>
+
+  <div class="panel">
+    <div class="chart-wrap"><canvas id="chartProj"></canvas></div>
+
+    <div class="legend-events">
+      <span><span class="swatch" style="background:rgba(255,138,138,0.18)"></span><b>Red band</b> Projected AU recession Q3 2026 – Q1 2028</span>
+      <span><span class="swatch" style="background:rgba(120,120,140,0.18)"></span><b>Grey band</b> COVID recession (observed)</span>
+      <span><b>Q3 2026</b> Recession begins</span>
+      <span><b>2027</b> RBA cuts to ~2.0%</span>
+      <span><b>Late 2027</b> All Ords trough (~5,000)</span>
+      <span><b>2028</b> Unemployment peak (~7.5%)</span>
+      <span><b>2029–30</b> Recovery</span>
+    </div>
+
+    <div class="footnote">
+      <b>Central projection assumptions.</b>
+      <br><br>
+      <i>Unemployment.</i> Rises from 4.3% (Mar 2026) to a peak of approximately 7.5% in 2028, then recovers slowly to ~5.5%
+      by 2030. The peak lags the recession by ~12 months (typical pattern). Magnitude is between 1991 (10.9%) and 2008 (5.9%);
+      held below 1991 by JobKeeper-style targeted support, fiscal stimulus, and the structural tightness of the labour market
+      pre-recession.
+      <br><br>
+      <i>RBA cash rate.</i> Cuts begin in late 2026 as recession evidence accumulates. Falls from 4.10% to ~2.0% through 2027.
+      Held at 1.5–2.0% through the trough. Begins normalising in 2029, reaches ~2.5% by 2030. The RBA does not return to
+      the COVID-era 0.10% because inflation pressures from the AUD slide prevent it.
+      <br><br>
+      <i>Oil in AUD/bbl.</i> Falls from ~$146 currently as global recession destroys oil demand, but AUD weakness
+      partially offsets the USD price decline. Settles in the $100–130 AUD range through the recession; recovers to
+      ~$120 by 2030 as both oil demand and the AUD normalise.
+      <br><br>
+      <i>All Ordinaries.</i> Falls from 8,745 to a trough of approximately 5,000 (a ~43% drawdown), then recovers slowly to
+      ~6,500 by 2030. The drawdown is between the 2008 GFC magnitude (-54%) and the 2020 COVID recovery shape. Real-terms
+      losses would be deeper if inflation persists, as in the 1973–1992 nominal-vs-real divergence.
+      <br><br>
+      <b>What would falsify this projection.</b> A swift Hormuz reopening with oil returning to $70 USD by Q3 2026
+      removes the trigger. RBA holding above 4% through 2027 indicates the inflation-fighting path was chosen over
+      the housing-supporting path. Iron ore staying above $100/tonne indicates the China demand channel held. Any
+      one of these would push the trajectory much closer to flat than to the projected curves.
+      <br><br>
+      <b>What would make it worse.</b> Banking-system stress emerging from mortgage delinquency. AUD breaking below 0.55
+      USD. Iron ore below $60/tonne. China entering its own deep recession. The 1973-grade scenario assumes none of
+      these tail risks materialise; if they do, the unemployment peak goes north of 9% and the All Ords trough goes
+      below 4,000.
+    </div>
+  </div>
+</div>
+
+<script>
+const grid = '#2a2f3d';
+const tickColor = '#8a91a3';
+const inkColor = '#e8eaf0';
+
+// Unemployment (US, BLS U-3, annual avg %)
+const unemp = [
+  [1970,4.9],[1971,5.9],[1972,5.6],[1973,4.9],[1974,5.6],[1975,8.5],[1976,7.7],[1977,7.1],
+  [1978,6.1],[1979,5.8],[1980,7.1],[1981,7.6],[1982,9.7],[1983,9.6],[1984,7.5],[1985,7.2],
+  [1986,7.0],[1987,6.2],[1988,5.5],[1989,5.3],[1990,5.6],[1991,6.8],[1992,7.5],[1993,6.9],
+  [1994,6.1],[1995,5.6],[1996,5.4],[1997,4.9],[1998,4.5],[1999,4.2],[2000,4.0],[2001,4.7],
+  [2002,5.8],[2003,6.0],[2004,5.5],[2005,5.1],[2006,4.6],[2007,4.6],[2008,5.8],[2009,9.3],
+  [2010,9.6],[2011,8.9],[2012,8.1],[2013,7.4],[2014,6.2],[2015,5.3],[2016,4.9],[2017,4.4],
+  [2018,3.9],[2019,3.7],[2020,8.1],[2021,5.4],[2022,3.6],[2023,3.6],[2024,4.0],[2025,4.2],
+  [2026,4.5]
+].map(([x,y]) => ({x,y}));
+
+// Oil (USD/bbl annual avg, nominal)
+const oil = [
+  [1970,1.80],[1971,2.24],[1972,2.48],[1973,3.29],[1974,11.58],[1975,12.21],[1976,13.10],
+  [1977,14.40],[1978,14.95],[1979,25.10],[1980,37.42],[1981,35.75],[1982,32.50],[1983,28.78],
+  [1984,28.06],[1985,26.92],[1986,14.44],[1987,17.75],[1988,14.87],[1989,18.33],[1990,23.19],
+  [1991,20.20],[1992,19.25],[1993,16.75],[1994,15.66],[1995,16.75],[1996,20.46],[1997,18.64],
+  [1998,11.91],[1999,16.56],[2000,27.39],[2001,23.00],[2002,22.81],[2003,27.69],[2004,37.66],
+  [2005,50.04],[2006,58.30],[2007,64.20],[2008,91.48],[2009,53.48],[2010,71.21],[2011,87.04],
+  [2012,86.46],[2013,91.17],[2014,85.60],[2015,41.85],[2016,41.96],[2017,48.05],[2018,61.40],
+  [2019,53.39],[2020,36.21],[2021,65.85],[2022,89.46],[2023,73.22],[2024,76.50],[2025,78.80],
+  [2026,105.00]
+].map(([x,y]) => ({x,y}));
+
+// Dow Jones Industrial Average (year-end close)
+const dow = [
+  [1970,838.92],[1971,890.20],[1972,1020.02],[1973,850.86],[1974,616.24],[1975,852.41],
+  [1976,1004.65],[1977,831.17],[1978,805.01],[1979,838.74],[1980,963.99],[1981,875.00],
+  [1982,1046.54],[1983,1258.64],[1984,1211.57],[1985,1546.67],[1986,1895.95],[1987,1938.83],
+  [1988,2168.57],[1989,2753.20],[1990,2633.66],[1991,3168.83],[1992,3301.11],[1993,3754.09],
+  [1994,3834.44],[1995,5117.12],[1996,6448.27],[1997,7908.25],[1998,9181.43],[1999,11497.12],
+  [2000,10786.85],[2001,10021.50],[2002,8341.63],[2003,10453.92],[2004,10783.01],[2005,10717.50],
+  [2006,12463.15],[2007,13264.82],[2008,8776.39],[2009,10428.05],[2010,11577.51],[2011,12217.56],
+  [2012,13104.14],[2013,16576.66],[2014,17823.07],[2015,17425.03],[2016,19762.60],[2017,24719.22],
+  [2018,23327.46],[2019,28538.44],[2020,30606.48],[2021,36338.30],[2022,33147.25],[2023,37689.54],
+  [2024,42544.22],[2025,48063.29],[2026,49230.71]
+].map(([x,y]) => ({x,y}));
+
+// NBER recessions (start year, end year as decimals so they line up correctly with annual-avg series)
+const recessions = [
+  [1969.92, 1970.92], // Dec 1969 - Nov 1970
+  [1973.92, 1975.25], // Nov 1973 - Mar 1975
+  [1980.08, 1980.58], // Jan 1980 - Jul 1980
+  [1981.58, 1982.92], // Jul 1981 - Nov 1982
+  [1990.58, 1991.25], // Jul 1990 - Mar 1991
+  [2001.25, 2001.92], // Mar 2001 - Nov 2001
+  [2007.92, 2009.50], // Dec 2007 - Jun 2009
+  [2020.17, 2020.33]  // Feb 2020 - Apr 2020
+];
+
+const recessionAnnotations = {};
+recessions.forEach(([s, e], i) => {
+  recessionAnnotations[`rec${i}`] = {
+    type: 'box',
+    xMin: s, xMax: e,
+    backgroundColor: 'rgba(120, 120, 140, 0.18)',
+    borderColor: 'rgba(120, 120, 140, 0.0)',
+    borderWidth: 0,
+    drawTime: 'beforeDatasetsDraw'
+  };
+});
+
+// Event lines
+const eventLines = {
+  embargo:  vline(1973.78, 'rgba(255,255,255,0.16)'),
+  iran:     vline(1979,    'rgba(255,255,255,0.16)'),
+  blackMon: vline(1987.79, 'rgba(255,255,255,0.16)'),
+  gulf:     vline(1990.58, 'rgba(255,255,255,0.16)'),
+  gfc:      vline(2008.75, 'rgba(255,255,255,0.16)'),
+  covid:    vline(2020.17, 'rgba(255,255,255,0.16)'),
+  iran2026: vline(2026.16, 'rgba(255, 140, 140, 0.55)', 1.5)
+};
+function vline(x, color, w=1) {
+  return {
+    type: 'line', xMin: x, xMax: x,
+    borderColor: color, borderWidth: w, borderDash: [4,4]
+  };
+}
+
+new Chart(document.getElementById('chart'), {
+  data: {
+    datasets: [
+      {
+        type: 'line',
+        label: 'Unemployment %',
+        yAxisID: 'yU',
+        data: unemp,
+        borderColor: '#7aa2ff',
+        backgroundColor: 'rgba(122, 162, 255, 0.08)',
+        borderWidth: 2,
+        tension: 0.25,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        fill: true
+      },
+      {
+        type: 'line',
+        label: 'Oil USD/bbl',
+        yAxisID: 'yO',
+        data: oil,
+        borderColor: '#ffd27a',
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        tension: 0.25,
+        pointRadius: 0,
+        pointHoverRadius: 4
+      },
+      {
+        type: 'line',
+        label: 'Dow (year-end)',
+        yAxisID: 'yD',
+        data: dow,
+        borderColor: '#6dd5a8',
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        tension: 0.25,
+        pointRadius: 0,
+        pointHoverRadius: 4
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { labels: { color: inkColor, boxWidth: 14 } },
+      tooltip: {
+        callbacks: {
+          title: (i) => Math.round(i[0].parsed.x).toString(),
+          label: (c) => {
+            const v = c.parsed.y;
+            if (c.dataset.label === 'Unemployment %') return `Unemployment: ${v.toFixed(1)}%`;
+            if (c.dataset.label === 'Oil USD/bbl')    return `Oil: $${v.toFixed(2)}/bbl`;
+            if (c.dataset.label === 'Dow (year-end)') return `Dow: ${v.toLocaleString()}`;
+            return c.dataset.label + ': ' + v;
+          }
+        }
+      },
+      annotation: { annotations: { ...recessionAnnotations, ...eventLines } }
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        min: 1969,
+        max: 2027,
+        ticks: {
+          color: tickColor, maxRotation: 0,
+          stepSize: 5,
+          callback: v => Number.isInteger(v) ? v.toString() : ''
+        },
+        grid: { color: grid },
+        title: { display: true, text: 'Year', color: tickColor }
+      },
+      yU: {
+        type: 'linear',
+        position: 'left',
+        min: 0, max: 16,
+        ticks: { color: '#7aa2ff', callback: v => v + '%' },
+        grid: { color: grid },
+        title: { display: true, text: 'Unemployment %', color: '#7aa2ff' }
+      },
+      yO: {
+        type: 'linear',
+        position: 'right',
+        min: 0, max: 160,
+        ticks: { color: '#ffd27a', callback: v => '$' + v },
+        grid: { drawOnChartArea: false },
+        title: { display: true, text: 'Oil USD/bbl', color: '#ffd27a' }
+      },
+      yD: {
+        type: 'logarithmic',
+        position: 'right',
+        min: 500, max: 60000,
+        ticks: {
+          color: '#6dd5a8',
+          callback: v => {
+            const allowed = [500, 1000, 2000, 5000, 10000, 20000, 40000];
+            return allowed.includes(v) ? v.toLocaleString() : '';
+          }
+        },
+        grid: { drawOnChartArea: false },
+        title: { display: true, text: 'Dow (log)', color: '#6dd5a8' },
+        afterFit: (axis) => { axis.width = 78; }
+      }
+    }
+  }
+});
+
+// ============== Australian chart ==============
+
+// AU unemployment rate (ABS, annual avg %)
+const unempAU = [
+  [1970,1.6],[1971,1.7],[1972,2.6],[1973,1.8],[1974,2.7],[1975,4.9],[1976,4.4],[1977,5.6],
+  [1978,6.3],[1979,6.2],[1980,6.0],[1981,5.8],[1982,7.2],[1983,9.9],[1984,8.9],[1985,8.2],
+  [1986,8.0],[1987,8.0],[1988,7.2],[1989,6.1],[1990,6.9],[1991,9.6],[1992,10.7],[1993,10.9],
+  [1994,9.7],[1995,8.5],[1996,8.5],[1997,8.5],[1998,7.7],[1999,7.0],[2000,6.3],[2001,6.7],
+  [2002,6.4],[2003,6.0],[2004,5.4],[2005,5.0],[2006,4.8],[2007,4.4],[2008,4.2],[2009,5.6],
+  [2010,5.2],[2011,5.1],[2012,5.2],[2013,5.7],[2014,6.1],[2015,6.1],[2016,5.7],[2017,5.6],
+  [2018,5.3],[2019,5.2],[2020,6.5],[2021,5.1],[2022,3.7],[2023,3.6],[2024,4.1],[2025,4.2],
+  [2026,4.3]
+].map(([x,y]) => ({x,y}));
+
+// RBA cash rate (target since Jan 1990; pre-1990 short-term money market rate as proxy)
+const cashAU = [
+  [1970,5.5],[1971,6.0],[1972,5.0],[1973,6.0],[1974,10.5],[1975,9.5],[1976,8.0],[1977,9.0],
+  [1978,9.5],[1979,10.0],[1980,12.5],[1981,14.0],[1982,16.0],[1983,12.0],[1984,12.5],[1985,17.0],
+  [1986,17.0],[1987,14.0],[1988,14.5],[1989,17.5],[1990,12.0],[1991,8.5],[1992,5.75],[1993,4.75],
+  [1994,7.5],[1995,7.5],[1996,6.0],[1997,5.0],[1998,4.75],[1999,5.0],[2000,6.25],[2001,4.25],
+  [2002,4.75],[2003,5.25],[2004,5.25],[2005,5.5],[2006,6.25],[2007,6.75],[2008,4.25],[2009,3.75],
+  [2010,4.75],[2011,4.25],[2012,3.0],[2013,2.5],[2014,2.5],[2015,2.0],[2016,1.5],[2017,1.5],
+  [2018,1.5],[2019,0.75],[2020,0.1],[2021,0.1],[2022,3.1],[2023,4.35],[2024,4.35],[2025,3.85],
+  [2026,4.10]
+].map(([x,y]) => ({x,y}));
+
+// AUD per USD (annual avg). Pre-Dec 1983 was fixed/managed; from 1984 floating.
+const audPerUsd = {
+  1970:0.892,1971:0.879,1972:0.838,1973:0.704,1974:0.696,1975:0.764,1976:0.817,1977:0.901,
+  1978:0.872,1979:0.894,1980:0.879,1981:0.870,1982:0.985,1983:1.110,1984:1.140,1985:1.432,
+  1986:1.494,1987:1.428,1988:1.275,1989:1.265,1990:1.281,1991:1.284,1992:1.362,1993:1.471,
+  1994:1.367,1995:1.349,1996:1.278,1997:1.347,1998:1.591,1999:1.550,2000:1.725,2001:1.933,
+  2002:1.842,2003:1.535,2004:1.359,2005:1.310,2006:1.328,2007:1.193,2008:1.192,2009:1.279,
+  2010:1.090,2011:0.969,2012:0.966,2013:1.036,2014:1.108,2015:1.331,2016:1.345,2017:1.305,
+  2018:1.339,2019:1.439,2020:1.453,2021:1.331,2022:1.442,2023:1.506,2024:1.516,2025:1.546,
+  2026:1.395
+};
+
+// Oil in AUD/bbl: USD oil × AUD per USD
+const oilAU = oil.map(d => ({ x: d.x, y: +(d.y * audPerUsd[d.x]).toFixed(2) }));
+
+// All Ordinaries (year-end close). Pre-1980 uses Sydney All Ordinaries Share Price Index
+// (different methodology); 1980+ uses current All Ords (rebased to 500 in Jan 1980).
+const allOrds = [
+  [1970,430],[1971,430],[1972,525],[1973,360],[1974,245],[1975,370],[1976,440],[1977,460],
+  [1978,570],[1979,600],[1980,654],[1981,624],[1982,489],[1983,728],[1984,728],[1985,1158],
+  [1986,1486],[1987,1311],[1988,1500],[1989,1660],[1990,1280],[1991,1651],[1992,1549],[1993,2173],
+  [1994,1913],[1995,2203],[1996,2418],[1997,2616],[1998,2813],[1999,3153],[2000,3155],[2001,3360],
+  [2002,3036],[2003,3306],[2004,4053],[2005,4708],[2006,5645],[2007,6339],[2008,3722],[2009,4882],
+  [2010,4847],[2011,4111],[2012,4664],[2013,5353],[2014,5411],[2015,5345],[2016,5719],[2017,6167],
+  [2018,5709],[2019,6802],[2020,6850],[2021,7779],[2022,7039],[2023,7591],[2024,8259],[2025,8800],
+  [2026,8745]
+].map(([x,y]) => ({x,y}));
+
+// Australian recessions (approximate, ABS-recognised contractions)
+const recessionsAU = [
+  [1974.50, 1976.00], // Oil-shock recession ~Q3 1974 - Q1 1976
+  [1981.92, 1983.50], // Q4 1981 - Q2 1983
+  [1990.50, 1991.75], // Jul 1990 - Sep 1991 ("the recession we had to have")
+  [2020.00, 2020.50]  // Q1-Q2 2020 COVID
+];
+
+const recessionAnnotationsAU = {};
+recessionsAU.forEach(([s, e], i) => {
+  recessionAnnotationsAU[`recAU${i}`] = {
+    type: 'box',
+    xMin: s, xMax: e,
+    backgroundColor: 'rgba(120, 120, 140, 0.18)',
+    borderColor: 'rgba(120, 120, 140, 0.0)',
+    borderWidth: 0,
+    drawTime: 'beforeDatasetsDraw'
+  };
+});
+
+// AU-specific event lines
+const eventLinesAU = {
+  oilShock:    vline(1973.78, 'rgba(255,255,255,0.16)'),
+  audFloat:    vline(1983.92, 'rgba(255,255,255,0.16)'),
+  ratePeak:    vline(1989.50, 'rgba(255,255,255,0.16)'),
+  blackMonAU:  vline(1987.79, 'rgba(255,255,255,0.16)'),
+  gfcAU:       vline(2008.75, 'rgba(255,255,255,0.16)'),
+  covidAU:     vline(2020.17, 'rgba(255,255,255,0.16)'),
+  iranAU:      vline(2026.16, 'rgba(255, 140, 140, 0.55)', 1.5)
+};
+
+new Chart(document.getElementById('chartAU'), {
+  data: {
+    datasets: [
+      {
+        type: 'line',
+        label: 'Unemployment %',
+        yAxisID: 'yU',
+        data: unempAU,
+        borderColor: '#7aa2ff',
+        backgroundColor: 'rgba(122, 162, 255, 0.08)',
+        borderWidth: 2,
+        tension: 0.25,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        fill: true
+      },
+      {
+        type: 'line',
+        label: 'RBA cash rate %',
+        yAxisID: 'yU',
+        data: cashAU,
+        borderColor: '#b48cff',
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        tension: 0.25,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        borderDash: [5, 3]
+      },
+      {
+        type: 'line',
+        label: 'Oil AUD/bbl',
+        yAxisID: 'yO',
+        data: oilAU,
+        borderColor: '#ffd27a',
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        tension: 0.25,
+        pointRadius: 0,
+        pointHoverRadius: 4
+      },
+      {
+        type: 'line',
+        label: 'All Ords (year-end)',
+        yAxisID: 'yA',
+        data: allOrds,
+        borderColor: '#6dd5a8',
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        tension: 0.25,
+        pointRadius: 0,
+        pointHoverRadius: 4
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { labels: { color: inkColor, boxWidth: 14 } },
+      tooltip: {
+        callbacks: {
+          title: (i) => Math.round(i[0].parsed.x).toString(),
+          label: (c) => {
+            const v = c.parsed.y;
+            if (c.dataset.label === 'Unemployment %')   return `Unemployment: ${v.toFixed(1)}%`;
+            if (c.dataset.label === 'RBA cash rate %')  return `Cash rate: ${v.toFixed(2)}%`;
+            if (c.dataset.label === 'Oil AUD/bbl')      return `Oil: A$${v.toFixed(2)}/bbl`;
+            if (c.dataset.label === 'All Ords (year-end)') return `All Ords: ${v.toLocaleString()}`;
+            return c.dataset.label + ': ' + v;
+          }
+        }
+      },
+      annotation: { annotations: { ...recessionAnnotationsAU, ...eventLinesAU } }
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        min: 1969,
+        max: 2027,
+        ticks: {
+          color: tickColor, maxRotation: 0,
+          stepSize: 5,
+          callback: v => Number.isInteger(v) ? v.toString() : ''
+        },
+        grid: { color: grid },
+        title: { display: true, text: 'Year', color: tickColor }
+      },
+      yU: {
+        type: 'linear',
+        position: 'left',
+        min: 0, max: 20,
+        ticks: { color: '#7aa2ff', callback: v => v + '%' },
+        grid: { color: grid },
+        title: { display: true, text: 'Unemployment % / Cash rate %', color: '#7aa2ff' }
+      },
+      yO: {
+        type: 'linear',
+        position: 'right',
+        min: 0, max: 200,
+        ticks: { color: '#ffd27a', callback: v => 'A$' + v },
+        grid: { drawOnChartArea: false },
+        title: { display: true, text: 'Oil AUD/bbl', color: '#ffd27a' }
+      },
+      yA: {
+        type: 'logarithmic',
+        position: 'right',
+        min: 200, max: 12000,
+        ticks: {
+          color: '#6dd5a8',
+          callback: v => {
+            const allowed = [200, 500, 1000, 2000, 5000, 10000];
+            return allowed.includes(v) ? v.toLocaleString() : '';
+          }
+        },
+        grid: { drawOnChartArea: false },
+        title: { display: true, text: 'All Ords (log)', color: '#6dd5a8' },
+        afterFit: (axis) => { axis.width = 78; }
+      }
+    }
+  }
+});
+
+// ============== Speculative projection chart 2015-2030 ==============
+
+// Slice historical data from 2015 onwards
+const sliceFrom2015 = arr => arr.filter(d => d.x >= 2015 && d.x <= 2026);
+
+const histUnemp = sliceFrom2015(unempAU);
+const histCash  = sliceFrom2015(cashAU);
+const histOilAU = sliceFrom2015(oilAU);
+const histAllOrds = sliceFrom2015(allOrds);
+
+// Projection 2026 (year-end) through 2030
+// 2026 year-end values reflect "recession starting Q3/Q4 2026"
+const projUnemp = [
+  { x: 2026, y: 4.8 },  // year-end (current is mar 2026 = 4.3)
+  { x: 2027, y: 6.5 },
+  { x: 2028, y: 7.5 },  // peak
+  { x: 2029, y: 6.5 },
+  { x: 2030, y: 5.5 }
+];
+const projCash = [
+  { x: 2026, y: 3.50 },  // RBA cuts started
+  { x: 2027, y: 2.00 },
+  { x: 2028, y: 1.50 },
+  { x: 2029, y: 2.00 },
+  { x: 2030, y: 2.50 }
+];
+const projOilAU = [
+  { x: 2026, y: 130 },   // recession demand drop offset by AUD weakness
+  { x: 2027, y: 115 },
+  { x: 2028, y: 105 },
+  { x: 2029, y: 115 },
+  { x: 2030, y: 120 }
+];
+const projAllOrds = [
+  { x: 2026, y: 7000 },  // year-end ~20% drawdown from peak
+  { x: 2027, y: 5200 },
+  { x: 2028, y: 5000 },  // trough year
+  { x: 2029, y: 5800 },
+  { x: 2030, y: 6500 }
+];
+
+// Connect historical end to projection start
+const connectorUnemp   = [...histUnemp.slice(-1), ...projUnemp];
+const connectorCash    = [...histCash.slice(-1),  ...projCash];
+const connectorOilAU   = [...histOilAU.slice(-1), ...projOilAU];
+const connectorAllOrds = [...histAllOrds.slice(-1), ...projAllOrds];
+
+// Annotations: projected recession band + COVID recession + Iran event line
+const projAnnotations = {
+  // Observed COVID recession
+  covidRec: {
+    type: 'box',
+    xMin: 2020.00, xMax: 2020.50,
+    backgroundColor: 'rgba(120, 120, 140, 0.18)',
+    borderColor: 'rgba(120, 120, 140, 0.0)',
+    borderWidth: 0,
+    drawTime: 'beforeDatasetsDraw'
+  },
+  // Projected recession Q3 2026 - Q1 2028
+  projRec: {
+    type: 'box',
+    xMin: 2026.50, xMax: 2028.00,
+    backgroundColor: 'rgba(255, 138, 138, 0.14)',
+    borderColor: 'rgba(255, 138, 138, 0.0)',
+    borderWidth: 0,
+    drawTime: 'beforeDatasetsDraw'
+  },
+  // Vertical line at "now" (Apr 2026)
+  nowLine: {
+    type: 'line',
+    xMin: 2026.32, xMax: 2026.32,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderWidth: 1.5,
+    borderDash: [2, 4],
+    label: {
+      display: true,
+      content: 'Apr 2026',
+      position: 'start',
+      backgroundColor: 'rgba(15, 17, 21, 0.8)',
+      color: 'rgba(255, 255, 255, 0.7)',
+      font: { size: 10 },
+      padding: 4,
+      yAdjust: -8
+    }
+  },
+  iranLine: vline(2026.16, 'rgba(255, 140, 140, 0.55)', 1.2)
+};
+
+new Chart(document.getElementById('chartProj'), {
+  data: {
+    datasets: [
+      // Historical (solid)
+      {
+        type: 'line', label: 'Unemployment % (observed)',
+        yAxisID: 'yU', data: histUnemp,
+        borderColor: '#7aa2ff',
+        backgroundColor: 'rgba(122, 162, 255, 0.08)',
+        borderWidth: 2, tension: 0.25, pointRadius: 2, pointHoverRadius: 4,
+        fill: true
+      },
+      {
+        type: 'line', label: 'Cash rate % (observed)',
+        yAxisID: 'yU', data: histCash,
+        borderColor: '#b48cff', backgroundColor: 'transparent',
+        borderWidth: 2, tension: 0.25, pointRadius: 2, pointHoverRadius: 4,
+        borderDash: [5, 3]
+      },
+      {
+        type: 'line', label: 'Oil AUD/bbl (observed)',
+        yAxisID: 'yO', data: histOilAU,
+        borderColor: '#ffd27a', backgroundColor: 'transparent',
+        borderWidth: 2, tension: 0.25, pointRadius: 2, pointHoverRadius: 4
+      },
+      {
+        type: 'line', label: 'All Ords (observed)',
+        yAxisID: 'yA', data: histAllOrds,
+        borderColor: '#6dd5a8', backgroundColor: 'transparent',
+        borderWidth: 2, tension: 0.25, pointRadius: 2, pointHoverRadius: 4
+      },
+      // Projected (dashed, lighter)
+      {
+        type: 'line', label: 'Unemployment % (projected)',
+        yAxisID: 'yU', data: connectorUnemp,
+        borderColor: 'rgba(122, 162, 255, 0.7)',
+        backgroundColor: 'transparent',
+        borderWidth: 2, borderDash: [8, 4],
+        tension: 0.25, pointRadius: 4, pointStyle: 'rect',
+        pointBackgroundColor: 'rgba(122, 162, 255, 0.7)',
+        pointBorderColor: '#0f1115', pointBorderWidth: 1
+      },
+      {
+        type: 'line', label: 'Cash rate % (projected)',
+        yAxisID: 'yU', data: connectorCash,
+        borderColor: 'rgba(180, 140, 255, 0.7)',
+        backgroundColor: 'transparent',
+        borderWidth: 2, borderDash: [8, 4],
+        tension: 0.25, pointRadius: 4, pointStyle: 'rect',
+        pointBackgroundColor: 'rgba(180, 140, 255, 0.7)',
+        pointBorderColor: '#0f1115', pointBorderWidth: 1
+      },
+      {
+        type: 'line', label: 'Oil AUD/bbl (projected)',
+        yAxisID: 'yO', data: connectorOilAU,
+        borderColor: 'rgba(255, 210, 122, 0.7)',
+        backgroundColor: 'transparent',
+        borderWidth: 2, borderDash: [8, 4],
+        tension: 0.25, pointRadius: 4, pointStyle: 'rect',
+        pointBackgroundColor: 'rgba(255, 210, 122, 0.7)',
+        pointBorderColor: '#0f1115', pointBorderWidth: 1
+      },
+      {
+        type: 'line', label: 'All Ords (projected)',
+        yAxisID: 'yA', data: connectorAllOrds,
+        borderColor: 'rgba(109, 213, 168, 0.7)',
+        backgroundColor: 'transparent',
+        borderWidth: 2, borderDash: [8, 4],
+        tension: 0.25, pointRadius: 4, pointStyle: 'rect',
+        pointBackgroundColor: 'rgba(109, 213, 168, 0.7)',
+        pointBorderColor: '#0f1115', pointBorderWidth: 1
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: {
+        labels: {
+          color: inkColor,
+          boxWidth: 14,
+          filter: (item) => !item.text.includes('(projected)')  // hide projected from legend to avoid clutter
+        }
+      },
+      tooltip: {
+        callbacks: {
+          title: (i) => Math.round(i[0].parsed.x).toString(),
+          label: (c) => {
+            const v = c.parsed.y;
+            const label = c.dataset.label;
+            if (label.startsWith('Unemployment')) return `${label}: ${v.toFixed(1)}%`;
+            if (label.startsWith('Cash rate'))    return `${label}: ${v.toFixed(2)}%`;
+            if (label.startsWith('Oil'))          return `${label}: A$${v.toFixed(0)}/bbl`;
+            if (label.startsWith('All Ords'))     return `${label}: ${v.toLocaleString()}`;
+            return `${label}: ${v}`;
+          }
+        }
+      },
+      annotation: { annotations: projAnnotations }
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        min: 2015, max: 2030.5,
+        ticks: {
+          color: tickColor, maxRotation: 0,
+          stepSize: 1,
+          callback: v => Number.isInteger(v) ? v.toString() : ''
+        },
+        grid: { color: grid },
+        title: { display: true, text: 'Year', color: tickColor }
+      },
+      yU: {
+        type: 'linear',
+        position: 'left',
+        min: 0, max: 10,
+        ticks: { color: '#7aa2ff', callback: v => v + '%' },
+        grid: { color: grid },
+        title: { display: true, text: 'Unemployment % / Cash rate %', color: '#7aa2ff' }
+      },
+      yO: {
+        type: 'linear',
+        position: 'right',
+        min: 0, max: 200,
+        ticks: { color: '#ffd27a', callback: v => 'A$' + v },
+        grid: { drawOnChartArea: false },
+        title: { display: true, text: 'Oil AUD/bbl', color: '#ffd27a' }
+      },
+      yA: {
+        type: 'linear',
+        position: 'right',
+        min: 4000, max: 10000,
+        ticks: {
+          color: '#6dd5a8',
+          callback: v => v.toLocaleString()
+        },
+        grid: { drawOnChartArea: false },
+        title: { display: true, text: 'All Ords', color: '#6dd5a8' },
+        afterFit: (axis) => { axis.width = 78; }
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>
